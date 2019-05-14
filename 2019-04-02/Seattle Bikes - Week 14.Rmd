@@ -1,0 +1,19 @@
+---
+title: "Seattle Bikes - Week 14"
+author: "Brad Hill"
+date: "April 1, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+pacman::p_load(tidyverse, gghighlight, lubridate)
+```
+
+# Ingest Data
+```{r data_pull}
+bike_traffic <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-04-02/bike_traffic.csv") %>% 
+  mutate(date = mdy_hms(date))
+```
+
+# 

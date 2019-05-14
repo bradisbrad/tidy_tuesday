@@ -1,0 +1,98 @@
+---
+title: "Anime Data - Week 17"
+author: "Brad Hill"
+date: "April 22, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+pacman::p_load(tidyverse, lubridate, ggridges, paletteer)
+```
+
+## Ingest Data
+
+```{r data_ingest}
+tidy_anime <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-04-23/tidy_anime.csv")
+```
+
+## Exploratory
+
+```{r exploratory}
+glimpse(tidy_anime)
+tidy_anime %>% 
+  select(animeID, name, title_english, type, rating, score, episodes, start_date, end_date, duration) %>% 
+  distinct() %>% 
+  mutate(title = coalesce(title_english, name)) %>% 
+  select(-c(name, title_english)) %>% 
+  mutate(hour = as.numeric(str_extract(str_extract(duration,"[0-9]+ hr"),"[0-9]+")),
+         minutes = as.numeric(str_extract(str_extract(duration,"[0-9]+ min"),"[0-9]+")),
+         hour = ifelse(is.na(hour),0,hour),
+         duration = hour*60 + minutes,
+         rating_only = str_remove(str_extract(rating, "^.* -"), " -")) %>% 
+  filter(type %in% c('Movie', 'TV')) %>% 
+  ggplot(aes(rating_only, score, fill = type)) +
+  geom_boxplot()
+```
+
+```{r theivery}
+dta <- tidy_anime %>% 
+  mutate(lub_date = ymd(start_date),
+         year = floor_date(lub_date, unit = 'year'),
+         decade = year(floor_date(lub_date, unit = years(10)))) %>% 
+  filter(!is.na(decade),
+         !is.na(score))
+
+dta %>% 
+  ggplot(aes(score, fct_rev(as.factor(decade)))) +
+  geom_density_ridges(quantile_lines = T,
+                      quantiles = 2,
+                      fill = '#C78283',
+                      color = '#DEC9B7',
+                      size = 1) +
+  scale_x_continuous(breaks = seq(0,10,1)) +
+  labs(title = 'Are we living in the golden age of anime?',
+       x = 'Fan Score (1-10 from worst to best)',
+       y = 'Decade',
+       subtitle = 'Anime from the last decade has the highest fan ratings',
+       caption = 'Data from Tan Nguyen and MyAnimeList.net via Kaggle') +
+  theme(
+    ### Title, Subtitle, Caption controls
+    plot.title = element_text(family = 'Futura Medium',
+                              size = 20,
+                              face = 'bold',
+                              color = '#DEC9B7',
+                              hjust = -0.13),
+    plot.subtitle = element_text(family = 'Futura Medium',
+                                 size = 12,
+                                 color = '#F4F1F8',
+                                 hjust = -0.08),
+    plot.caption = element_text(family = 'Futura Medium',
+                                size = 8,
+                                color = '#F4F1F8',
+                                hjust = -0.08),
+    ### Axis Controls
+    axis.title = element_text(family = 'Futura Medium',
+                              face = 'bold',
+                              size = 12,
+                              color = '#F4F1F8'),
+    axis.text = element_text(family = 'Futura Medium',
+                             face = 'bold',
+                             size = 12,
+                             color = '#F4F1F8',
+                             hjust = 1,
+                             vjust = 0.75),
+    axis.text.x = element_text(family = 'Futura Medium'),
+    axis.text.y = element_text(family = 'Futura Medium'),
+    axis.ticks = element_blank(),
+    ### Panel Backgrounds
+    panel.background = element_rect(fill = '#415A64'),
+    plot.background = element_rect(fill = '#415A64'),
+    panel.grid.major = element_line(linetype = 'blank'),
+    panel.grid.minor = element_line(linetype = 'blank'),
+    legend.position = 'none',
+    ### Margin Control
+    plot.margin = grid::unit(c(4,0,0,2.5), 'mm')) +
+  coord_cartesian(clip = 'off')
+```
+

@@ -1,0 +1,31 @@
+---
+title: 'Seattle Pets - 2019-03-26'
+author: "Brad Hill"
+date: "March 26, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+pacman::p_load(tidyverse, gghighlight, lubridate, gender, timetk, leaflet, zipcode)
+```
+
+```{r load_data}
+seattle_pets <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-03-26/seattle_pets.csv")
+data(zipcode)
+seattle_pets <- seattle_pets %>% 
+  mutate(license_issue_date = mdy(license_issue_date),
+         species = factor(species)) %>% 
+  left_join(zipcode, by = c('zip_code' = 'zip')) %>% 
+  tk_augment_timeseries_signature()
+
+```
+
+```{r explore}
+seattle_pets %>% 
+  filter(species == 'Dog',
+         year == 2018) %>% 
+  count(zip_code, latitude, longitude) %>% 
+  leaflet() %>% addTiles() %>% addCircleMarkers()
+```
+

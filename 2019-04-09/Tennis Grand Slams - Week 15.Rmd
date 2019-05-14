@@ -1,0 +1,49 @@
+---
+title: "Tennis Grand Slams - Week 15"
+author: "Brad Hill"
+date: "April 8, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+pacman::p_load(tidyverse, gghighlight, lubridate)
+```
+
+## Data Ingest  
+
+```{r github_ingest}
+surfaces <- tibble(grand_slam = c('australian_open', 'us_open', 'french_open', 'wimbledon'),
+                   surface = c('hard', 'hard', 'clay', 'grass'))
+player_dob <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-04-09/player_dob.csv") %>% 
+  select(name, date_of_birth)
+grand_slams <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-04-09/grand_slams.csv") %>% 
+  left_join(surfaces)
+grand_slam_timeline <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-04-09/grand_slam_timeline.csv") %>% 
+  rename(name = player,
+         grand_slam = tournament) %>% 
+  mutate(grand_slam = tolower(str_replace(grand_slam," ", "_"))) %>% 
+  left_join(surfaces)
+```
+
+## Go Go Gadget Data Inspection  
+
+```{r looksie}
+glimpse(player_dob)
+glimpse(grand_slams)
+glimpse(grand_slam_timeline)
+```
+
+```{r}
+aged_slams <- grand_slams %>% 
+  left_join(player_dob, by = c('name')) %>% 
+  select(-grand_slam.y, -date_of_first_title) %>% 
+  rename(grand_slam = grand_slam.x) %>% 
+  mutate(age = floor(as.numeric(tournament_date - date_of_birth)/365.242))
+
+grand_slam_timeline %>% 
+  left_join(player_dob)
+  mutate(tournament = tolower(str_replace(tournament," ","_"))) %>% 
+  left_join(aged_slams, by = c('player' = 'name', 'year', 'tournament' = 'grand_slam'))
+```
+
