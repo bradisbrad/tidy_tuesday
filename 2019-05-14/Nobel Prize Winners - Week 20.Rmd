@@ -1,0 +1,55 @@
+---
+title: "Nobel Prize Winners"
+author: "Brad Hill"
+date: "May 13, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+pacman::p_load(tidyverse, lubridate, wesanderson, tidytext)
+```
+
+## Data Ingest
+
+```{r ingest}
+nobel_winners <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-05-14/nobel_winners.csv")
+nobel_winner_all_pubs <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-05-14/nobel_winner_all_pubs.csv")
+```
+
+## Quick look
+
+```{r summaries}
+glimpse(nobel_winners)
+glimpse(nobel_winner_all_pubs)
+```
+
+```{r age_boxplot}
+nobel_winners %>% 
+  mutate(approx_age = prize_year - year(birth_date),
+         category = factor(category, levels = c('Physics', 'Medicine', 'Chemistry', 'Peace', 'Literature', 'Economics'))) %>% 
+  ggplot(aes(category, approx_age, fill = category)) +
+  geom_boxplot() +
+  theme_minimal() +
+  theme(legend.position = 'none') +
+  labs(title = 'Approximate Age of Nobel Prize Winners by Category',
+       x = '',
+       y = 'Approximate Age') +
+  scale_fill_manual(values = c(wes_palette('GrandBudapest1'), wes_palette('GrandBudapest2')))
+```
+
+```{r }
+nobel_winners %>% 
+  group_by(category) %>% 
+  filter(!is.na(motivation)) %>% 
+  select(motivation) %>% 
+  mutate(motivation = str_remove_all(motivation, '\\\"')) %>% 
+  distinct() %>% 
+  unnest_tokens(word, motivation) %>% 
+  anti_join(stop_words) %>% 
+  group_by(category, word) %>% 
+  summarize(count = n()) %>% 
+  arrange(desc(count))
+  
+```
+
